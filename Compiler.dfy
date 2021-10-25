@@ -163,9 +163,6 @@ predicate mach_terminates (C: code, s_init: state, s_fin: state)
   && star_transition(C, (0, Nil, s_init), (pc, Nil, s_fin))
 }
 
-// TODO do other predicates have to be least here? I might want to experiment with removing the "least" and see what happens
-
-// Ask Rustan about this
 greatest predicate infseq_transition(C: code, conf: configuration)
 {
     exists conf2 :: transition(C, conf, conf2) && infseq_transition(C, conf2)
@@ -215,7 +212,8 @@ lemma stop_irred(C: code, pc: nat, stk: stack, st: state)
   ensures irred_transition(C, (pc, stk, st))
 {}
 
-// What does it mean to say "least" here and why does it make it work?
+// TODO do other predicates have to be least here? I might want to experiment with removing the "least" and see what happens
+
 least lemma finseq_unique(C: code, a: configuration, c: configuration, c': configuration)
   requires star_transition(C, a, c) && irred_transition(C, c)
   requires star_transition(C, a, c') && irred_transition(C, c')
@@ -247,7 +245,8 @@ lemma terminates_goeswrong_exclusive(C: code, st: state, st': state)
   var conf := (0, Nil, st);
   var conf' := (pc, Nil, st');
   forall stk_stuck, st_stuck, pc_stuck
-    ensures && star_transition(C, (0, Nil, st), (pc_stuck, stk_stuck, st_stuck)) 
+    // TODO can the syntax here be simplified?
+    ensures && star_transition(C, (0, Nil, st), (pc_stuck, stk_stuck, st_stuck))
             && irred_transition(C, (pc_stuck, stk_stuck, st_stuck))
             ==> && pc == pc_stuck
                 && stk_stuck == Nil
