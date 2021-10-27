@@ -261,7 +261,7 @@ least lemma infseq_star_inv(C: code, a: configuration, c: configuration)
 {
   if a != c {
     var b :| && transition(C, a, b)
-              && star_transition(C, b, c);
+             && star_transition(C, b, c);
     forall b' | transition(C, a, b') ensures b == b' {
       machine_deterministic(C, a, b, b');
     }
@@ -292,5 +292,18 @@ lemma terminates_diverges_exclusive(C: code, st: state, st': state)
   var pc :| code_at(C, pc) == Some(Ihalt) && star_transition(C, (0, Nil, st), (pc, Nil, st'));
   var conf := (0, Nil, st);
   var conf' := (pc, Nil, st');
+  infseq_finseq_excl(C, conf, conf');
+}
+
+lemma goeswrong_diverges_exclusive(C: code, st: state)
+  requires mach_goes_wrong(C, st)
+  ensures !mach_diverges(C, st)
+{
+  var conf := (0, Nil, st);
+  var pc, stk, s_fin :|
+    && star_transition(C, conf, (pc, stk, s_fin))
+    && irred_transition(C, (pc, stk, s_fin))
+    && (code_at(C, pc) != Some(Ihalt) || stk != Nil);
+  var conf' := (pc, stk, s_fin);
   infseq_finseq_excl(C, conf, conf');
 }
