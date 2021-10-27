@@ -31,6 +31,14 @@ function append<T>(l1: list<T>, l2: list<T>): list<T>
   case Cons(x, xs) => Cons(x, append(xs, l2))
 }
 
+// My length function
+function length<T>(l: list<T>): nat
+{
+  match l
+  case Nil => 0
+  case Cons(_, xs) => 1 + length(xs)
+}
+
 datatype instruction =
   | Iconst(nat)
   | Ivar(id)
@@ -337,8 +345,8 @@ datatype bexp =
   | BFalse
   | BEq(aexp, aexp)
   | BLe(aexp, aexp)
-  | BNot(aexp, aexp)
-  | BAnd(aexp, aexp)
+  | BNot(bexp)
+  | BAnd(bexp, bexp)
 
 datatype com =
   | CSkip
@@ -362,4 +370,23 @@ function compile_aexp (a: aexp) : code
   case APlus(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Iadd, Nil)))
   case AMinus(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Isub, Nil)))
   case AMult(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Imul, Nil)))
+}
+
+function compile_bexp(b: bexp, cond: bool, ofs: nat) : code
+{
+  match b
+  case BTrue =>
+      if cond then Cons(Ibranch_forward(ofs), Nil) else Nil
+  case BFalse =>
+      if cond then Nil else Cons(Ibranch_forward(ofs), Nil)
+  case BEq(a1, a2) =>
+      append(compile_aexp(a1), append(compile_aexp(a2), if cond then Cons(Ibeq(ofs), Nil) else Cons(Ibne(ofs), Nil)))
+  case BLe(a1, a2) =>
+      append(compile_aexp(a1), append(compile_aexp(a2), if cond then Cons(Ible(ofs), Nil) else Cons(Ibgt(ofs), Nil)))
+  case BNot(b1) =>
+      compile_bexp(b1, !cond, ofs)
+  case BAnd(b1, b2) =>
+      var c2 := compile_bexp(b2, cond, ofs);
+      var c1 := compile_bexp(b1, false, if cond then length(c2) else ofs + length(c2));
+      append(c1, c2)
 }
