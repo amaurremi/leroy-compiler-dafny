@@ -23,6 +23,14 @@ datatype option<T> = Some(T) | None
 datatype list<T> = Nil | Cons(T, list<T>)
 type id = string
 
+// My append function (Leroy uses Coq lists)
+function append<T>(l1: list<T>, l2: list<T>): list<T>
+{
+  match l1
+  case Nil => l2
+  case Cons(x, xs) => Cons(x, append(xs, l2))
+}
+
 datatype instruction =
   | Iconst(nat)
   | Ivar(id)
@@ -306,4 +314,52 @@ lemma goeswrong_diverges_exclusive(C: code, st: state)
     && (code_at(C, pc) != Some(Ihalt) || stk != Nil);
   var conf' := (pc, stk, s_fin);
   infseq_finseq_excl(C, conf, conf');
+}
+
+/* * 3. IMP programs whose free variables are in [U]. */
+
+/* We redefine the abstract syntax of IMP to ensure that all
+  variables mentioned in the program are taken from [U]. */
+
+const U': set<id>
+const U: set<id> := {"x"} + U' // TODO This is hacky
+type Uvar = x: id | x in U witness "x"
+
+datatype aexp =
+  | ANum(nat)
+  | AId (Uvar)        /*r <--- NEW */
+  | APlus(aexp, aexp)
+  | AMinus(aexp, aexp)
+  | AMult(aexp, aexp)
+
+datatype bexp =
+  | BTrue
+  | BFalse
+  | BEq(aexp, aexp)
+  | BLe(aexp, aexp)
+  | BNot(aexp, aexp)
+  | BAnd(aexp, aexp)
+
+datatype com =
+  | CSkip
+  | CAss(Uvar, aexp)   /*r <--- NEW */
+  | CSeq(com, com)
+  | CIf(bexp, com, com)
+  | CWhile(bexp, com)
+
+/* The code for an arithmetic expression [a]
+- executes in sequence (no branches)
+- deposits the value of [a] at the top of the stack
+- preserves the variable state.
+This is the familiar translation to "reverse Polish notation".
+*/
+
+function compile_aexp (a: aexp) : code
+{
+  match a
+  case ANum(n) => Cons(Iconst(n), Nil)
+  case AId(v) => Cons(Ivar(v), Nil)
+  case APlus(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Iadd, Nil)))
+  case AMinus(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Isub, Nil)))
+  case AMult(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Imul, Nil)))
 }
