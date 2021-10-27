@@ -284,3 +284,13 @@ lemma infseq_finseq_excl(C: code, a: configuration, c: configuration)
     }
   }
 }
+
+lemma terminates_diverges_exclusive(C: code, st: state, st': state)
+  requires mach_terminates(C, st, st')
+  ensures !mach_diverges(C, st)
+{
+  var pc :| code_at(C, pc) == Some(Ihalt) && star_transition(C, (0, Nil, st), (pc, Nil, st'));
+  var conf := (0, Nil, st);
+  var conf' := (pc, Nil, st');
+  infseq_finseq_excl(C, conf, conf');
+}
