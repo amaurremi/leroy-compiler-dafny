@@ -372,6 +372,8 @@ function compile_aexp (a: aexp) : code
   case AMult(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Imul, Nil)))
 }
 
+// TODO implement examples for compile_aexp
+
 function compile_bexp(b: bexp, cond: bool, ofs: nat) : code
 {
   match b
@@ -389,4 +391,39 @@ function compile_bexp(b: bexp, cond: bool, ofs: nat) : code
       var c2 := compile_bexp(b2, cond, ofs);
       var c1 := compile_bexp(b1, false, if cond then length(c2) else ofs + length(c2));
       append(c1, c2)
+}
+
+// TODO implement examples for compile_bexp
+
+/* The code for a command [c]
+- updates the variable state as prescribed by [c]
+- preserves the stack
+- finishes on the next instruction immediately following the generated code.
+Again, see slides for explanations of the generated branch offsets.
+*/
+
+// Remark: notations are a nice thing in Coq
+function compile_com(c: com) : code
+{
+  match c
+  case CSkip =>
+      Nil
+  case CAss(id, a) =>
+      append(compile_aexp(a), Cons(Isetvar(id), Nil))
+  case CSeq(c1, c2) =>
+      append(compile_com(c1), compile_com(c2))
+  case CIf(b, ifso, ifnot) =>
+      var code_ifso := compile_com(ifso);
+      var code_ifnot := compile_com(ifnot);
+      append(compile_bexp(b, false, length(code_ifso) + 1),
+             append(code_ifso,
+                    Cons(Ibranch_forward(length(code_ifnot)),
+                         code_ifnot)))
+  case CWhile(b, body) =>
+      var code_body := compile_com(body);
+      var code_test := compile_bexp(b, false, length(code_body) + 1);
+      append(code_test,
+             append(code_body,
+                    Cons(Ibranch_backward(length(code_test) + length(code_body) + 1),
+                         Nil)))
 }
