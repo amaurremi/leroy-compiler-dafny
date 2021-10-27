@@ -330,8 +330,10 @@ lemma goeswrong_diverges_exclusive(C: code, st: state)
   variables mentioned in the program are taken from [U]. */
 
 const U': set<id>
-const U: set<id> := {"x"} + U' // TODO This is hacky
-type Uvar = x: id | x in U witness "x"
+const vx := "X"
+const vy := "Y"
+const U: set<id> := {vx, vy} + U'
+type Uvar = x: id | x in U witness vx
 
 datatype aexp =
   | ANum(nat)
@@ -372,7 +374,18 @@ function compile_aexp (a: aexp) : code
   case AMult(a1, a2) => append(compile_aexp(a1), append(compile_aexp(a2), Cons(Imul, Nil)))
 }
 
-// TODO implement examples for compile_aexp
+/* Some examples. */
+
+method example1()
+{
+  var e1 := compile_aexp(APlus(AId(vx), ANum(1)));
+  var expected1 := Cons(Ivar(vx), Cons(Iconst(1), Cons(Iadd, Nil)));
+  assert e1 == expected1;
+
+  var e2 := compile_aexp(AMult(AId(vy), APlus(AId(vx), ANum(1))));
+  var expected2 := Cons(Ivar(vy), Cons(Ivar(vx), Cons(Iconst(1), Cons(Iadd, Cons(Imul, Nil)))));
+  assert e2 == expected2;
+}
 
 function compile_bexp(b: bexp, cond: bool, ofs: nat) : code
 {
@@ -393,7 +406,22 @@ function compile_bexp(b: bexp, cond: bool, ofs: nat) : code
       append(c1, c2)
 }
 
-// TODO implement examples for compile_bexp
+/* Examples. */
+
+method example2()
+{
+  var e1 := compile_bexp(BEq(AId(vx), ANum(1)), true, 42);
+  var expected1 := Cons(Ivar(vx), Cons(Iconst(1), Cons(Ibeq(42), Nil)));
+  assert e1 == expected1;
+
+  var e2 := compile_bexp(BAnd(BLe(ANum(1), AId(vx)), BLe(AId(vx), ANum(10))), false, 42);
+  var expected2 := Cons(Iconst(1), Cons(Ivar(vx), Cons(Ibgt(45), Cons(Ivar(vx), Cons(Iconst(10), Cons(Ibgt(42), Nil))))));
+  assert e2 == expected2;
+
+  var e3 := compile_bexp(BNot(BAnd(BTrue, BFalse)), true, 42);
+  var expected3 := Cons(Ibranch_forward(42), Nil);
+  assert e3 == expected3;
+}
 
 /* The code for a command [c]
 - updates the variable state as prescribed by [c]
@@ -427,3 +455,29 @@ function compile_com(c: com) : code
                     Cons(Ibranch_backward(length(code_test) + length(code_body) + 1),
                          Nil)))
 }
+
+/* The code for a program [p] (a command) is similar, but terminates
+  cleanly on an [Ihalt] instruction. */
+
+function compile_program(p: com): code
+{
+  append(compile_com(p), Cons(Ihalt, Nil))
+}
+
+/* Examples of compilation. */
+
+method example3()
+{
+  var e1 := compile_program(CAss(vx, APlus(AId(vx), ANum(1))));
+  var expected1 := Cons(Ivar(vx), Cons(Iconst(1), Cons(Iadd, Cons(Isetvar(vx), Cons(Ihalt, Nil)))));
+  assert e1 == expected1;
+
+  var e2 := compile_program(CWhile(BTrue, CSkip));
+  var expected2 := Cons(Ibranch_backward(1), Cons(Ihalt, Nil));
+  assert e2 == expected2;
+
+  var e3 := compile_program(CIf(BEq(AId(vx), ANum(1)), CAss(vx, ANum(0)), CSkip));
+  var expected3 := Cons(Ivar(vx), Cons(Iconst(1), Cons(Ibne(3), Cons(Iconst(0), Cons(Isetvar(vx), Cons(Ibranch_forward(0), Cons(Ihalt, Nil)))))));
+  assert e3 == expected3; 
+}
+
