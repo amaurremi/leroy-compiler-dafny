@@ -24,19 +24,19 @@ datatype list<T> = Nil | Cons(T, list<T>)
 type id = string
 
 datatype instruction =
-    | Iconst(nat)
-    | Ivar(id)
-    | Isetvar(id)
-    | Iadd
-    | Isub
-    | Imul
-    | Ibranch_forward(nat)
-    | Ibranch_backward(nat)
-    | Ibeq(nat)
-    | Ibne(nat)
-    | Ible(nat)
-    | Ibgt(nat)
-    | Ihalt
+  | Iconst(nat)
+  | Ivar(id)
+  | Isetvar(id)
+  | Iadd
+  | Isub
+  | Imul
+  | Ibranch_forward(nat)
+  | Ibranch_backward(nat)
+  | Ibeq(nat)
+  | Ibne(nat)
+  | Ible(nat)
+  | Ibgt(nat)
+  | Ihalt
 
 type code = list<instruction>
 
@@ -44,12 +44,12 @@ type code = list<instruction>
   in the list of instructions [C]. */
 
 function code_at (C: code, pc: nat) : option<instruction>
-    {
-        match (C, pc)
-        case (Nil, _)         => None
-        case (Cons(i, _), 0)  => Some(i)
-        case (Cons(_, C'), n) => code_at(C', n - 1)
-    }
+{
+  match (C, pc)
+  case (Nil, _)         => None
+  case (Cons(i, _), 0)  => Some(i)
+  case (Cons(_, C'), n) => code_at(C', n - 1)
+}
 
 type stack = list<nat>
 
@@ -71,72 +71,72 @@ type configuration = (nat, stack, state)
 // in the conjunction.
 least predicate transition (C: code, conf1: configuration, conf2: configuration)
 {
-    var (pc1, stk1, st1) := conf1;
-    var (pc2, stk2, st2) := conf2;
-    match code_at(C, pc1)
-    case Some(Iconst(n)) =>
-        && pc2 == pc1 + 1
-        && stk2 == Cons(n, stk1)
-        && st2 == st1
-    case Some(Ivar(x)) =>
-        && pc2 == pc1 + 1
-        && x in st1 // TODO: this is different from Leroy
-        && stk2 == Cons(st1[x], stk1)
-        && st2 == st1
-    case Some(Isetvar(x)) =>
-        exists v ::
-        && pc2 == pc1 + 1
-        && stk1 == Cons(v, stk2)
-        && st2 == st1[x:=v]
-    case Some(Iadd) =>
-        exists v1, v2, vs ::
-        && pc2 == pc1 + 1
-        && stk1 == Cons(v2, Cons(v1, vs))
-        && stk2 == Cons(v1 + v2, vs)
-        && st1 == st2
-    case Some(Isub) =>
-        exists v1, v2, vs ::
-        && pc2 == pc1 + 1
-        && stk1 == Cons(v2, Cons(v1, vs))
-        && stk2 == Cons(v1 - v2, vs)
-        && st1 == st2
-    case Some(Imul) =>
-        exists v1, v2, vs ::
-        && pc2 == pc1 + 1
-        && stk1 == Cons(v2, Cons(v1, vs))
-        && stk2 == Cons(v1 * v2, vs)
-        && st1 == st2
-    case Some(Ibranch_forward(ofs)) =>
-        && pc2 == pc1 + 1 + ofs
-        && stk1 == stk2
-        && st1 == st2
-    case Some(Ibranch_backward(ofs)) =>
-        && pc1 + 1 > ofs
-        && pc2 == pc1 + 1 - ofs
-        && stk1 == stk2
-        && st1 == st2
-    case Some(Ibeq(ofs)) =>
-        exists v1, v2 ::
-        && stk1 == Cons(v2, Cons(v1, stk2))
-        && (if v1 == v2 then pc2 == pc1 + 1 - ofs else pc2 == pc1 + 1)
-        && st1 == st2
-    case Some(Ibne(ofs)) =>
-        exists v1, v2 ::
-        && stk1 == Cons(v2, Cons(v1, stk2))
-        && (if v1 == v2 then pc2 == pc1 + 1 else pc2 == pc1 + 1 + ofs)
-        && st1 == st2
-    case Some(Ible(ofs)) =>
-        exists v1, v2 ::
-        && stk1 == Cons(v2, Cons(v1, stk2))
-        && (if v1 < v2 then pc2 == pc1 + 1 + ofs else pc2 == pc1 + 1)
-        && st1 == st2
-    case Some(Ibgt(ofs)) =>
-        exists v1, v2 ::
-        && stk1 == Cons(v2, Cons(v1, stk2))
-        && (if v1 < v2 then pc2 == pc1 + 1 else pc2 == pc1 + 1 + ofs)
-        && st1 == st2
-    case Some(Ihalt) => false
-    case None => false
+  var (pc1, stk1, st1) := conf1;
+  var (pc2, stk2, st2) := conf2;
+  match code_at(C, pc1)
+  case Some(Iconst(n)) =>
+      && pc2 == pc1 + 1
+      && stk2 == Cons(n, stk1)
+      && st2 == st1
+  case Some(Ivar(x)) =>
+      && pc2 == pc1 + 1
+      && x in st1 // TODO: this is different from Leroy
+      && stk2 == Cons(st1[x], stk1)
+      && st2 == st1
+  case Some(Isetvar(x)) =>
+      exists v ::
+      && pc2 == pc1 + 1
+      && stk1 == Cons(v, stk2)
+      && st2 == st1[x:=v]
+  case Some(Iadd) =>
+      exists v1, v2, vs ::
+      && pc2 == pc1 + 1
+      && stk1 == Cons(v2, Cons(v1, vs))
+      && stk2 == Cons(v1 + v2, vs)
+      && st1 == st2
+  case Some(Isub) =>
+      exists v1, v2, vs ::
+      && pc2 == pc1 + 1
+      && stk1 == Cons(v2, Cons(v1, vs))
+      && stk2 == Cons(v1 - v2, vs)
+      && st1 == st2
+  case Some(Imul) =>
+      exists v1, v2, vs ::
+      && pc2 == pc1 + 1
+      && stk1 == Cons(v2, Cons(v1, vs))
+      && stk2 == Cons(v1 * v2, vs)
+      && st1 == st2
+  case Some(Ibranch_forward(ofs)) =>
+      && pc2 == pc1 + 1 + ofs
+      && stk1 == stk2
+      && st1 == st2
+  case Some(Ibranch_backward(ofs)) =>
+      && pc1 + 1 > ofs
+      && pc2 == pc1 + 1 - ofs
+      && stk1 == stk2
+      && st1 == st2
+  case Some(Ibeq(ofs)) =>
+      exists v1, v2 ::
+      && stk1 == Cons(v2, Cons(v1, stk2))
+      && (if v1 == v2 then pc2 == pc1 + 1 - ofs else pc2 == pc1 + 1)
+      && st1 == st2
+  case Some(Ibne(ofs)) =>
+      exists v1, v2 ::
+      && stk1 == Cons(v2, Cons(v1, stk2))
+      && (if v1 == v2 then pc2 == pc1 + 1 else pc2 == pc1 + 1 + ofs)
+      && st1 == st2
+  case Some(Ible(ofs)) =>
+      exists v1, v2 ::
+      && stk1 == Cons(v2, Cons(v1, stk2))
+      && (if v1 < v2 then pc2 == pc1 + 1 + ofs else pc2 == pc1 + 1)
+      && st1 == st2
+  case Some(Ibgt(ofs)) =>
+      exists v1, v2 ::
+      && stk1 == Cons(v2, Cons(v1, stk2))
+      && (if v1 < v2 then pc2 == pc1 + 1 else pc2 == pc1 + 1 + ofs)
+      && st1 == st2
+  case Some(Ihalt) => false
+  case None => false
 }
 
 // To avoid working with higher-order functions, rather than defining a star relation,
@@ -147,8 +147,8 @@ least predicate transition (C: code, conf1: configuration, conf2: configuration)
 // transition
 least predicate star_transition(C: code, confA: configuration, confC: configuration)
 {
-    || confA == confC
-    || exists confB :: transition(C, confA, confB) && star_transition(C, confB, confC)
+  || confA == confC
+  || exists confB :: transition(C, confA, confB) && star_transition(C, confB, confC)
 }
 
 /* As usual with small-step semantics, we form sequences of machine transitions
@@ -165,7 +165,7 @@ predicate mach_terminates (C: code, s_init: state, s_fin: state)
 
 greatest predicate infseq_transition(C: code, conf: configuration)
 {
-    exists conf2 :: transition(C, conf, conf2) && infseq_transition(C, conf2)
+  exists conf2 :: transition(C, conf, conf2) && infseq_transition(C, conf2)
 }
 
 predicate mach_diverges(C: code, s_init: state)
@@ -245,17 +245,42 @@ lemma terminates_goeswrong_exclusive(C: code, st: state, st': state)
   var conf := (0, Nil, st);
   var conf' := (pc, Nil, st');
   forall stk_stuck, st_stuck, pc_stuck
-    // TODO can the syntax here be simplified?
-    ensures && star_transition(C, (0, Nil, st), (pc_stuck, stk_stuck, st_stuck))
-            && irred_transition(C, (pc_stuck, stk_stuck, st_stuck))
-            ==> && pc == pc_stuck
-                && stk_stuck == Nil
-           {
-              var conf_stuck := (pc_stuck, stk_stuck, st_stuck);
-              if && star_transition(C, conf, conf_stuck) 
-                 && irred_transition(C, conf_stuck)
-              {
-                finseq_unique(C, conf, conf', conf_stuck);
-              }
+    | && star_transition(C, (0, Nil, st), (pc_stuck, stk_stuck, st_stuck))
+      && irred_transition(C, (pc_stuck, stk_stuck, st_stuck))
+    ensures && pc == pc_stuck
+            && stk_stuck == Nil
+            {
+              finseq_unique(C, conf, conf', (pc_stuck, stk_stuck, st_stuck));
             }
+}
+
+least lemma infseq_star_inv(C: code, a: configuration, c: configuration)
+  requires star_transition(C, a, c)
+  requires infseq_transition(C, a)
+  ensures infseq_transition(C, c)
+{
+  if a != c {
+    var b :| && transition(C, a, b)
+              && star_transition(C, b, c);
+    forall b' | transition(C, a, b') ensures b == b' {
+      machine_deterministic(C, a, b, b');
+    }
+  }
+}
+
+lemma irred_not_infseq(C: code, a: configuration)
+requires irred_transition(C, a)
+ensures !infseq_transition(C, a)
+{}
+
+lemma infseq_finseq_excl(C: code, a: configuration, c: configuration)
+  requires star_transition(C, a, c)
+  requires irred_transition(C, c)
+  ensures !infseq_transition(C, a)
+{
+  if a != c {
+    if infseq_transition(C, a) {
+      infseq_star_inv(C, a, c);
+    }
+  }
 }
